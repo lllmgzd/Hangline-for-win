@@ -50,6 +50,10 @@ if ($SelfContained) {
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 $env:DOTNET_NOLOGO = '1'
 
+# publish 不会删掉上一次留下的文件（比如改过名字的旧 dll、调试符号），
+# 不清就会把上上版的残留一起打进分发包。
+if (Test-Path $out) { Remove-Item $out -Recurse -Force }
+
 & $dotnet @buildArgs
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

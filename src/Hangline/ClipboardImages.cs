@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Security.Cryptography;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace Hangline;
@@ -36,6 +37,11 @@ internal static class ClipboardImages
             if (image is null) return null;
             if ((long)image.PixelWidth * image.PixelHeight > MaxPixels) return null;
 
+            // 有的程序（微信的截图工具就是）写剪贴板时没有填 alpha 通道，
+            // 整张图 alpha 全是 0。WPF 把 alpha=0 当全透明渲染，挂到绳子上
+            // 就只剩卡片底色，看起来是一块白板。颜色数据其实还在，补回来。
+            image = RepairAlpha(image);
+
             var png = Encode(image);
             if (png is null || png.Length == 0 || png.Length > MaxBytes) return null;
 
@@ -53,6 +59,57 @@ internal static class ClipboardImages
         {
             // 剪贴板被别的程序占着，或格式读不动：跳过这一次。
             return null;
+        }
+    }
+
+    /// 整张图 alpha 全是 0 时补成不透明。颜色数据本来就在，只是被 alpha 抹掉了。
+    ///
+    /// 不能简单地"只要 alpha 全 0 就补"：一张真正全透明的图补了会变成全黑。
+    /// 所以要求 RGB 本身有内容（不是纯黑均匀色）才补。
+    private static BitmapSource RepairAlpha(BitmapSource image)
+    {
+        try
+        {
+            var width = image.PixelWidth;
+            var height = image.PixelHeight;
+            if (width <= 0 || height <= 0) return image;
+
+            var converted = new FormatConvertedBitmap(image, PixelFormats.Bgra32, null, 0);
+            var stride = width * 4;
+            var pixels = new byte[stride * height];
+            converted.CopyPixels(pixels, stride, 0);
+
+            var opaqueCount = 0;
+            var firstRed = pixels[2];
+            var firstGreen = pixels[1];
+            var firstBlue = pixels[0];
+            var rgbVaries = false;
+
+            for (var i = 0; i + 3 < pixels.Length; i += 4)
+            {
+                if (pixels[i + 3] != 0) opaqueCount++;
+
+                if (!rgbVaries
+                    && (pixels[i] != firstBlue || pixels[i + 1] != firstGreen || pixels[i + 2] != firstRed))
+                {
+                    rgbVaries = true;
+                }
+            }
+
+            // alpha 已经正常，或这张图本来就该全透明（RGB 也是一片纯色），都不动。
+            if (opaqueCount > 0 || !rgbVaries) return image;
+
+            for (var i = 3; i < pixels.Length; i += 4) pixels[i] = 0xFF;
+
+            var repaired = BitmapSource.Create(
+                width, height, 96, 96, PixelFormats.Bgra32, null, pixels, stride);
+            repaired.Freeze();
+            return repaired;
+        }
+        catch
+        {
+            // 补不了就用原图，别把整次取图弄失败。
+            return image;
         }
     }
 
