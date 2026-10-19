@@ -4,9 +4,11 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using Drawing = System.Drawing;
 using DrawingImaging = System.Drawing.Imaging;
+using Ellipse = System.Windows.Shapes.Ellipse;
 
 namespace Hangline;
 
@@ -95,7 +97,7 @@ internal sealed class LongCapture
         IsActive = true;
 
         _messages.RegisterStopHotkey();
-        _hint = new LongHint(_region, Stop);
+        _hint = new LongHint(_region, Stop, Cancel);
         _hint.Show();
 
         _timer = new DispatcherTimer(DispatcherPriority.Background)
@@ -127,6 +129,24 @@ internal sealed class LongCapture
         _matcher = null;
 
         if (path is not null) callback?.Invoke(path);
+    }
+
+    public void Cancel()
+    {
+        if (!IsActive) return;
+        IsActive = false;
+
+        _timer?.Stop();
+        _timer = null;
+        _messages.UnregisterStopHotkey();
+        _hint?.Close();
+        _hint = null;
+
+        _onCaptured = null;
+        _canvas = Array.Empty<byte>();
+        _matcher?.Clear();
+        _matcher = null;
+        Log.Note("long capture cancelled");
     }
 
     private void Tick()
@@ -270,20 +290,30 @@ internal sealed class LongCapture
     }
 }
 
-/// 长截图时那根提示条：贴在选区下面，带一个「完成」。
+/// 长截图提示与控制条：贴在选区外侧，带状态指示、文字提示与「取消」「完成」操作。
 internal sealed class LongHint : Window
 {
     private readonly TextBlock _text;
 
-    public LongHint(Int32Rect region, Action onDone)
+    public LongHint(Int32Rect region, Action onDone, Action onCancel)
     {
         WindowStyle = WindowStyle.None;
         ResizeMode = ResizeMode.NoResize;
         ShowInTaskbar = false;
         Topmost = true;
         ShowActivated = false;
+        AllowsTransparency = true;
         SizeToContent = SizeToContent.WidthAndHeight;
-        Background = new SolidColorBrush(Color.FromArgb(0xE6, 0x10, 0x14, 0x1C));
+        Background = Brushes.Transparent;
+
+        var dot = new Ellipse
+        {
+            Width = 8,
+            Height = 8,
+            Fill = new SolidColorBrush(Color.FromRgb(0x38, 0xBD, 0xF8)),
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 10, 0),
+        };
 
         _text = new TextBlock
         {
@@ -291,32 +321,52 @@ internal sealed class LongHint : Window
             Foreground = Brushes.White,
             FontSize = 13,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(12, 0, 10, 0),
+            Margin = new Thickness(0, 0, 14, 0),
         };
 
-        var done = new Button
-        {
-            Content = L.T("long.done"),
-            Padding = new Thickness(12, 4, 12, 4),
-            Margin = new Thickness(0, 0, 10, 0),
-        };
-        done.Click += (_, _) => onDone();
+        var cancel = CaptureOverlay.CreateFlatButton(
+            $"✕  {L.T("capture.cancel")}",
+            Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF),
+            Color.FromArgb(0x55, 0xFF, 0xFF, 0xFF),
+            Colors.White,
+            onCancel);
 
-        var panel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 8) };
+        var done = CaptureOverlay.CreateFlatButton(
+            $"✓  {L.T("long.done")}",
+            Color.FromRgb(0x25, 0x63, 0xEB),
+            Color.FromRgb(0x1D, 0x4E, 0xD8),
+            Colors.White,
+            onDone);
+
+        var panel = new StackPanel { Orientation = Orientation.Horizontal };
+        panel.Children.Add(dot);
         panel.Children.Add(_text);
+        panel.Children.Add(cancel);
         panel.Children.Add(done);
-        Content = panel;
+
+        var card = new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(0xF2, 0x14, 0x18, 0x22)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(14, 8, 14, 8),
+            Effect = new DropShadowEffect { BlurRadius = 14, ShadowDepth = 2, Opacity = 0.5, Color = Colors.Black },
+            Child = panel,
+        };
+
+        Content = card;
 
         // 贴在选区外面：先试下面，下面放不下就放到上面。
         // 位置一律用物理像素（和选区同一套坐标），不能和 WPF 的 DIP 混着算。
         var screen = System.Windows.Forms.Screen.FromRectangle(new Drawing.Rectangle(
             region.X, region.Y, region.Width, region.Height));
 
-        var left = Math.Max(screen.Bounds.Left + 8, Math.Min(region.X, screen.Bounds.Right - 360));
+        var left = Math.Max(screen.Bounds.Left + 8, Math.Min(region.X, screen.Bounds.Right - 460));
         var below = region.Y + region.Height + 10;
-        var top = below + 46 <= screen.Bounds.Bottom
+        var top = below + 54 <= screen.Bounds.Bottom
             ? below
-            : Math.Max(screen.Bounds.Top + 8, region.Y - 56);
+            : Math.Max(screen.Bounds.Top + 8, region.Y - 64);
 
         SourceInitialized += (_, _) =>
         {
