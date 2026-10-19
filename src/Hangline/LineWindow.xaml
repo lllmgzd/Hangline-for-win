@@ -1,0 +1,43 @@
+<Window x:Class="Hangline.LineWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:ClassModifier="internal"
+        Title="晾绳"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="{x:Null}"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        Topmost="True"
+        ResizeMode="NoResize"
+        Focusable="False"
+        SnapsToDevicePixels="True"
+        WindowStartupLocation="Manual"
+        Left="0" Top="0" Width="900" Height="220">
+
+  <Grid x:Name="Root" Background="{x:Null}">
+    <Grid.RenderTransform>
+      <TranslateTransform x:Name="Slide" Y="-1000" />
+    </Grid.RenderTransform>
+
+    <StackPanel VerticalAlignment="Top">
+      <Rectangle x:Name="Rope" Height="2" Margin="0,8,0,0" RadiusX="1" RadiusY="1">
+        <Rectangle.Fill>
+          <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#003B82F6" Offset="0" />
+            <GradientStop Color="#B33B82F6" Offset="0.5" />
+            <GradientStop Color="#003B82F6" Offset="1" />
+          </LinearGradientBrush>
+        </Rectangle.Fill>
+      </Rectangle>
+
+      <StackPanel x:Name="ItemsPanel" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,0" />
+
+      <TextBlock x:Name="Hint"
+                 HorizontalAlignment="Center"
+                 Margin="0,26,0,0"
+                 FontSize="13"
+                 Foreground="#59FFFFFF" />
+    </StackPanel>
+  </Grid>
+</Window>

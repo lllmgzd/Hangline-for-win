@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>Hangline</AssemblyName>
+    <RootNamespace>Hangline</RootNamespace>
+    <StartupObject>Hangline.Program</StartupObject>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- DPI 感知由 app.manifest 声明（WPF 需要），不必再让 WinForms 配一遍。 -->
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
+    <Version>0.1.0</Version>
+    <Product>晾绳 Hangline</Product>
+    <AssemblyTitle>晾绳 Hangline</AssemblyTitle>
+  </PropertyGroup>
+
+</Project>
