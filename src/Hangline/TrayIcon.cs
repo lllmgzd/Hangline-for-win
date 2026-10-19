@@ -18,6 +18,8 @@ internal sealed class TrayIcon : IDisposable
 
     private static readonly string[] ShotHotkeyChoices = { "Ctrl+Alt+A", "Ctrl+Shift+A", "Ctrl+Alt+F" };
 
+    private static readonly string[] LongHotkeyChoices = { "Ctrl+Alt+L", "Ctrl+Shift+L", "Ctrl+Alt+G" };
+
     private readonly AppSettings _settings;
     private readonly LineWindow _line;
     private readonly Action _applyHotkeys;
@@ -29,9 +31,11 @@ internal sealed class TrayIcon : IDisposable
     private readonly ToolStripMenuItem _foldersMenu;
     private readonly List<ToolStripMenuItem> _lineHotkeyItems = new();
     private readonly List<ToolStripMenuItem> _shotHotkeyItems = new();
+    private readonly List<ToolStripMenuItem> _longHotkeyItems = new();
     private readonly List<(ToolStripMenuItem Item, string Code)> _languageItems = new();
     private readonly ToolStripMenuItem _lineHotkeyOffItem;
     private readonly ToolStripMenuItem _shotHotkeyOffItem;
+    private readonly ToolStripMenuItem _longHotkeyOffItem;
     private bool _disposed;
 
     public TrayIcon(
@@ -117,6 +121,29 @@ internal sealed class TrayIcon : IDisposable
         });
         shotMenu.DropDownItems.Add(_shotHotkeyOffItem);
 
+        var longMenu = new ToolStripMenuItem(L.T("menu.longHotkey"));
+        foreach (var choice in LongHotkeyChoices)
+        {
+            var captured = choice;
+            var item = new ToolStripMenuItem(captured, null, (_, _) =>
+            {
+                settings.LongShotHotkey = captured;
+                settings.LongShotHotkeyEnabled = true;
+                settings.Save();
+                _applyHotkeys();
+            });
+            _longHotkeyItems.Add(item);
+            longMenu.DropDownItems.Add(item);
+        }
+        longMenu.DropDownItems.Add(new ToolStripSeparator());
+        _longHotkeyOffItem = new ToolStripMenuItem(L.T("menu.off"), null, (_, _) =>
+        {
+            settings.LongShotHotkeyEnabled = false;
+            settings.Save();
+            _applyHotkeys();
+        });
+        longMenu.DropDownItems.Add(_longHotkeyOffItem);
+
         var lineMenu = new ToolStripMenuItem(L.T("menu.lineHotkey"));
         foreach (var choice in LineHotkeyChoices)
         {
@@ -154,6 +181,7 @@ internal sealed class TrayIcon : IDisposable
         menu.Items.Add(_pinItem);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(shotMenu);
+        menu.Items.Add(longMenu);
         menu.Items.Add(new ToolStripMenuItem(L.T("menu.rescan"), null, (_, _) => _line.Rescan()));
         menu.Items.Add(new ToolStripMenuItem(L.T("menu.openShots"), null, (_, _) => OpenFolder(settings.ResolvedWatchFolder)));
         menu.Items.Add(new ToolStripMenuItem(L.T("menu.openData"), null, (_, _) => OpenFolder(AppSettings.DataFolder)));
@@ -185,6 +213,13 @@ internal sealed class TrayIcon : IDisposable
                     && string.Equals(item.Text, settings.ShotHotkey, StringComparison.OrdinalIgnoreCase);
             }
             _shotHotkeyOffItem.Checked = !settings.ShotHotkeyEnabled;
+
+            foreach (var item in _longHotkeyItems)
+            {
+                item.Checked = settings.LongShotHotkeyEnabled
+                    && string.Equals(item.Text, settings.LongShotHotkey, StringComparison.OrdinalIgnoreCase);
+            }
+            _longHotkeyOffItem.Checked = !settings.LongShotHotkeyEnabled;
 
             foreach (var item in _lineHotkeyItems)
             {

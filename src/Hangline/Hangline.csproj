@@ -20,4 +20,9 @@
     <AssemblyTitle>晾绳 Hangline</AssemblyTitle>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- 长截图拼接用 ORB 特征点匹配，替换原先的逐行签名比对。 -->
+    <PackageReference Include="OpenCvSharp4.Windows" Version="4.13.0.20260627" />
+  </ItemGroup>
+
 </Project>

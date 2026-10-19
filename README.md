@@ -24,6 +24,7 @@ Windows 把截图存在 `图片\Screenshots`，`PrtScn`、`Win+PrtScn`、`Win+Sh
 - **全屏应用时自动隐藏**：看视频、玩游戏不挡路
 - **额外监听目录**：把下载目录之类的也盯上
 - **可接管系统截图目录**：让系统截图直接落到晾绳目录，桌面不乱（可随时还原）
+- **长截图**：框选一块区域，自己滚页面，自动拼成一张长图
 - **四种界面语言**：简体中文 / 繁體中文 / English / 日本語
 - **不联网**：没有账号、没有上报，截图不出本机
 
@@ -39,19 +40,20 @@ Windows 把截图存在 `图片\Screenshots`，`PrtScn`、`Win+PrtScn`、`Win+Sh
 | 右键图片 | 复制 / 打开 / 用画图编辑 / 在文件夹中显示 / 另存为 / 从绳子上取下 / 丢弃 |
 | 图片右上角的 ✕ | 丢弃：从绳子上取下，文件**送回收站** |
 | `Ctrl+Alt+A` | 框选截图，截完挂上绳子并复制到剪贴板 |
+| `Ctrl+Alt+L` | 长截图：框选区域后自己滚页面，拼好挂上绳子 |
 | `Ctrl+Alt+T` | 把绳子拉下来 |
 | 托盘图标双击 | 临时拉下来 4 秒 |
 
 右键菜单开着、或者正在拖图的时候，绳子不会收回去。
 
-快捷键可以在托盘里换：托盘 →「截图快捷键」/「展开 / 收起快捷键」。
+快捷键可以在托盘里换：托盘 →「截图快捷键」/「长截图快捷键」/「展开 / 收起快捷键」。
 
 ## 托盘菜单
 
 | 菜单项 | 作用 |
 | --- | --- |
 | 展开 / 收起、固定显示 | 控制绳子 |
-| 截图快捷键、展开 / 收起快捷键 | 换键，改完立刻生效 |
+| 截图快捷键、长截图快捷键、展开 / 收起快捷键 | 换键，改完立刻生效 |
 | 重新挂上最近的截图 | 把截图目录里最近的几张重新挂回来 |
 | 打开截图文件夹 / 打开数据目录 | 打开对应目录 |
 | 清空绳子 | 全部取下（自己截的图送回收站） |
@@ -63,6 +65,29 @@ Windows 把截图存在 `图片\Screenshots`，`PrtScn`、`Win+PrtScn`、`Win+Sh
 | 语言 | 跟随系统 / 简体中文 / 繁體中文 / English / 日本語 |
 | 开机启动 | 开关 |
 | 退出 | 退出（会把接管的截图目录还回去） |
+
+## 长截图
+
+`Ctrl+Alt+L`：框出一块区域，然后自己滚页面。程序每 500 ms 抓一帧，把相邻两帧的纵向
+位移算出来、拼成一张长图。点「完成」、按 Esc，或者画面停住 4 帧都会收工。
+
+程序**不替你滚页面**。给别的程序灌滚轮消息，浏览器、Electron、自绘控件反应差别太大，
+所以滚动交给用户，程序只负责拼。
+
+帧间位移用 **ORB 特征点**投票算，不是逐行比像素：
+
+- 每帧提特征点，相邻两帧做描述子匹配
+- 只保留横向位移在 100 px 以内的匹配（同一处纹理不该横向跑偏）
+- 每个匹配点给一个纵向位移，按位移值分桶投票
+- **得票最多的那个位移**就是滚动量，不取最大位移——位移最大的点往往是错配
+
+逐行签名在大量重复行（列表、代码、表格）上会锁错位置，接缝处出重影；特征点靠局部纹理，
+重复行几乎不影响投票结果。画面完全没动时直接丢弃该帧，不追加。
+
+上限是**高 30000 行、面积 1.5 亿像素**，到顶就停下提示。连续 11 帧对不上会明确报错
+（提示回到中断处缓慢滚动），**不会硬拼一张烂图**。
+
+匹配正确性由 `tools/matcher-harness` 用合成页面逐像素验证，改算法参数后跑一遍再提交。
 
 ## 数据放在哪
 
@@ -98,6 +123,8 @@ dist\data\
   "Hotkey": "Ctrl+Alt+T",
   "ShotHotkeyEnabled": true,
   "ShotHotkey": "Ctrl+Alt+A",
+  "LongShotHotkeyEnabled": true,
+  "LongShotHotkey": "Ctrl+Alt+L",
   "MaxItems": 12,
   "CardHeight": 128,
   "EdgeTriggerPx": 3
@@ -135,12 +162,28 @@ powershell -ExecutionPolicy Bypass -File build.ps1
 脚本会自己找装了 SDK 的 dotnet（PATH → `DOTNET_ROOT` → `Program Files` → `D:\dotnet`）。
 SDK 装在别处就设一下环境变量 `DOTNET_ROOT`。
 
-产物在 `dist\Hangline.exe`。默认不带运行时（目标机装了 .NET 8 桌面运行时即可，整包约 200 KB）。
+产物在 `dist\Hangline.exe`。默认不带运行时（目标机装了 .NET 8 桌面运行时即可）。
+整包约 96 MB：其中 93 MB 是 OpenCvSharp 带下来的 OpenCV 原生库（`OpenCvSharpExtern.dll`
+65 MB，外加一个 27 MB 的 ffmpeg 组件——长截图用不到，嫌大可以从
+`dist\runtimes\win-x64\native\` 删掉）。
+
 要拷到没装 .NET 的机器上：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File build.ps1 -SelfContained
 ```
+
+### 验证长截图的拼接
+
+`tools/matcher-harness` 是匹配器的验证脚本：合成一页内容（含大片重复行），按已知步长
+"滚动"它，算出每步位移，拼回去再跟原页逐像素比对；顺带检查发布目录里的原生库能不能真加载。
+
+```powershell
+cd tools\matcher-harness
+dotnet run -c Release
+```
+
+输出里每项都应当是"逐像素一致"，最后打印"全部通过"。
 
 ## 代码结构
 
@@ -150,6 +193,8 @@ powershell -ExecutionPolicy Bypass -File build.ps1 -SelfContained
 | `LineWindow.xaml(.cs)` | 贴着屏幕上沿的绳子，滑出与收起 |
 | `PegCard.cs` | 一张图：缩略图、手势、右键菜单、动画 |
 | `ScreenCapture.cs` | 框选截图：全屏遮罩、选区换算、裁图存盘 |
+| `LongCapture.cs` | 长截图：抓帧循环、画布拼接、上限与失败判定 |
+| `FrameMatcher.cs` | 相邻两帧的纵向位移：ORB 特征点匹配 + 位移投票 |
 | `ClipboardImages.cs` | 剪贴板里的纯图片 |
 | `ClipboardPayload.cs` | 往剪贴板放 PNG / DIB / TIFF / Bitmap 多份格式 |
 | `ScreenshotWatcher.cs` | 盯截图目录（支持多个） |

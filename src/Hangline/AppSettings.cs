@@ -47,6 +47,12 @@ internal sealed class AppSettings
     /// 框选截图的快捷键：按下后拖出一块区域，截完挂上绳子。
     public string ShotHotkey { get; set; } = "Ctrl+Alt+A";
 
+    /// 长截图的快捷键开关。
+    public bool LongShotHotkeyEnabled { get; set; } = true;
+
+    /// 长截图快捷键：选一块区域，之后自己滚页面，程序把每帧拼起来。
+    public string LongShotHotkey { get; set; } = "Ctrl+Alt+L";
+
     /// 全屏应用（游戏、视频）时自动隐藏，别挡着。
     public bool HideOnFullScreen { get; set; } = true;
 

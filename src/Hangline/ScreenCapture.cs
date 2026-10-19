@@ -22,6 +22,26 @@ internal sealed class ScreenCapture
 
     public void Start(Action<string> onCaptured)
     {
+        Begin((desktop, selection) =>
+        {
+            var path = selection is null ? null : Save(desktop, selection.Value);
+            if (path is not null) onCaptured(path);
+        });
+    }
+
+    /// 只要选区，不要存盘。长截图拿它当起点：先框一块区域，之后自己滚页面。
+    public void StartRegion(Action<Int32Rect> onSelected)
+    {
+        Begin((_, selection) =>
+        {
+            if (selection is null) return;
+            onSelected(selection.Value);
+        });
+    }
+
+    /// 抓底图、铺遮罩、等用户松手。选完把底图和选区一起交给调用方处置。
+    private void Begin(Action<System.Drawing.Bitmap, Int32Rect?> onCompleted)
+    {
         if (_overlay is not null) return;
 
         var desktop = CaptureVirtualScreen();
@@ -33,12 +53,18 @@ internal sealed class ScreenCapture
 
         var overlay = new CaptureOverlay(desktop);
         _overlay = overlay;
+        var handler = onCompleted;
         overlay.Completed += selection =>
         {
             _overlay = null;
-            var path = selection is null ? null : Save(desktop, selection.Value);
-            desktop.Dispose();
-            if (path is not null) onCaptured(path);
+            try
+            {
+                handler(desktop, selection);
+            }
+            finally
+            {
+                desktop.Dispose();
+            }
         };
 
         overlay.Show();

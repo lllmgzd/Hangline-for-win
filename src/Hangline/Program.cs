@@ -126,6 +126,14 @@ internal static class Program
                     ? $"line hotkey: {settings.Hotkey}"
                     : $"line hotkey FAILED: {settings.Hotkey}");
             }
+
+            if (settings.LongShotHotkeyEnabled
+                && HotkeySpec.TryParse(settings.LongShotHotkey, out var longModifiers, out var longKey))
+            {
+                Log.Note(messages.RegisterLongHotkey(longModifiers, longKey)
+                    ? $"long hotkey: {settings.LongShotHotkey}"
+                    : $"long hotkey FAILED: {settings.LongShotHotkey}");
+            }
         }
 
         var capture = new ScreenCapture();
@@ -164,6 +172,38 @@ internal static class Program
         };
 
         ApplyHotkeys();
+
+        var longCapture = new LongCapture(messages);
+
+        messages.LongHotkeyPressed += () =>
+        {
+            if (capture.IsActive || longCapture.IsActive) return;
+
+            // 先把绳子收起来，等这一帧画完再抓屏。
+            line.HideForCapture();
+            var delay = new DispatcherTimer(DispatcherPriority.Background)
+            {
+                Interval = TimeSpan.FromMilliseconds(150),
+            };
+            delay.Tick += (_, _) =>
+            {
+                delay.Stop();
+                capture.StartRegion(region => longCapture.Run(region, path =>
+                {
+                    // 拼好的长图一样挂上绳子并放进剪贴板。
+                    line.AddFile(path, temporary: true);
+
+                    var image = ImageLoader.LoadFull(path);
+                    if (image is not null) ClipboardPayload.Copy(image);
+
+                    line.ShowTemporarily();
+                }));
+            };
+            delay.Start();
+        };
+
+        // 长截图期间 Esc 归它独占，用来结束。
+        messages.StopHotkeyPressed += () => longCapture.Stop();
 
         TrayIcon? tray = null;
 

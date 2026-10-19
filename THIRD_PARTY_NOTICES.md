@@ -22,6 +22,11 @@ Tendedero 的**代码**以 MIT 许可发布，但它的**名称、图标和 `doc
 ## 运行依赖
 
 - .NET 8 桌面运行时（Microsoft.WindowsDesktop.App）——系统级组件，不随仓库分发。
-- 除此之外**没有任何第三方库**：项目文件里没有 NuGet 依赖，读写剪贴板、注册表、
-  已知文件夹、拖放、截图都是通过系统 API 完成的。
+- **OpenCvSharp4**（NuGet）——长截图的帧间位移靠 ORB 特征点算，用了它。
+  - OpenCvSharp 本体：Apache License 2.0，<https://github.com/shimat/opencvsharp>
+  - 随包分发的 OpenCV 原生库（`OpenCvSharpExtern.dll`）：Apache License 2.0，
+    见 <https://opencv.org/license/>
+  - 两者都是宽松许可，保留署名即可，不要求本项目开源同等代码。原生库约 93 MB，
+    由 NuGet 还原时带下来，不进仓库。
+- 其余功能（读写剪贴板、注册表、已知文件夹、拖放、截图）都通过系统 API 完成，没有额外的库。
 - 用「画图」（`mspaint.exe`）做长按编辑，那是 Windows 自带程序，不随仓库分发。

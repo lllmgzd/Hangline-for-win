@@ -2,6 +2,8 @@
 dist/
 src/**/bin/
 src/**/obj/
+tools/**/bin/
+tools/**/obj/
 
 # 运行期数据（设置、日志、截图缓存），不该进仓库
 data/

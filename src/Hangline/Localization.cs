@@ -21,6 +21,7 @@ menu.toggle=展开 / 收起
 menu.pin=固定显示
 menu.shotHotkey=截图快捷键
 menu.lineHotkey=展开 / 收起快捷键
+menu.longHotkey=长截图快捷键
 menu.off=关闭
 menu.rescan=重新挂上最近的截图
 menu.openShots=打开截图文件夹
@@ -49,6 +50,9 @@ card.remove=从绳子上取下（不删文件）
 card.discard=丢弃（删到回收站）
 line.hint=截好的图会挂在这条绳子上
 capture.hint=拖动选择区域，Esc 或右键取消
+long.running=长截图：滚动页面（滚一下停一下），点「完成」或按 Esc 结束
+long.done=完成
+long.failed=拼接失败，请回到中断处缓慢滚动屏幕
 dialog.imageFilter=图片|*.png;*.jpg;*.jpeg;*.bmp;*.gif|所有文件|*.*
 ");
 
@@ -60,6 +64,7 @@ menu.toggle=展開 / 收合
 menu.pin=固定顯示
 menu.shotHotkey=截圖快速鍵
 menu.lineHotkey=展開 / 收合快速鍵
+menu.longHotkey=長截圖快速鍵
 menu.off=關閉
 menu.rescan=重新掛上最近的截圖
 menu.openShots=開啟截圖資料夾
@@ -88,6 +93,9 @@ card.remove=從繩子上取下（不刪檔案）
 card.discard=丟棄（刪到回收站）
 line.hint=截好的圖會掛在這條繩子上
 capture.hint=拖曳選取區域，Esc 或按右鍵取消
+long.running=長截圖：捲動頁面（捲一下停一下），按「完成」或 Esc 結束
+long.done=完成
+long.failed=拼接失敗，請回到中斷處緩慢捲動畫面
 dialog.imageFilter=圖片|*.png;*.jpg;*.jpeg;*.bmp;*.gif|所有檔案|*.*
 ");
 
@@ -99,6 +107,7 @@ menu.toggle=Show / hide
 menu.pin=Keep it down
 menu.shotHotkey=Screenshot shortcut
 menu.lineHotkey=Show / hide shortcut
+menu.longHotkey=Long screenshot shortcut
 menu.off=Off
 menu.rescan=Hang up the latest screenshots
 menu.openShots=Open screenshots folder
@@ -127,6 +136,9 @@ card.remove=Take off the line (keep the file)
 card.discard=Discard (send to Recycle Bin)
 line.hint=Screenshots you take will hang here
 capture.hint=Drag to pick a region. Esc or right-click to cancel
+long.running=Long screenshot: scroll a bit at a time, then Done or Esc
+long.done=Done
+long.failed=Stitching failed. Scroll back to where it stopped and scroll slowly.
 dialog.imageFilter=Images|*.png;*.jpg;*.jpeg;*.bmp;*.gif|All files|*.*
 ");
 
@@ -138,6 +150,7 @@ menu.toggle=表示 / 隠す
 menu.pin=表示したまま
 menu.shotHotkey=スクリーンショットのキー
 menu.lineHotkey=表示 / 隠すキー
+menu.longHotkey=長いスクリーンショットのキー
 menu.off=オフ
 menu.rescan=最近のスクリーンショットを掛け直す
 menu.openShots=スクリーンショットのフォルダーを開く
@@ -166,6 +179,9 @@ card.remove=ラインから外す（ファイルは残す）
 card.discard=捨てる（ごみ箱へ）
 line.hint=撮ったスクリーンショットがここに掛かります
 capture.hint=ドラッグで範囲を選択。Esc か右クリックで取消
+long.running=長いスクリーンショット：少しずつスクロールし、「完了」か Esc で終了
+long.done=完了
+long.failed=結合に失敗しました。中断した位置まで戻して、ゆっくりスクロールしてください
 dialog.imageFilter=画像|*.png;*.jpg;*.jpeg;*.bmp;*.gif|すべてのファイル|*.*
 ");
 

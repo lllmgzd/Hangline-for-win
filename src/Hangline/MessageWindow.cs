@@ -9,6 +9,10 @@ internal sealed class MessageWindow : IDisposable
 {
     private const int LineHotkeyId = 0x484C;
     private const int ShotHotkeyId = 0x484D;
+    private const int LongHotkeyId = 0x484E;
+
+    /// 长截图期间临时占用的键，用来中断（同一个键，先注销再注册）。
+    private const int StopHotkeyId = 0x484F;
 
     private readonly HwndSource _source;
     private readonly HashSet<int> _registered = new();
@@ -36,6 +40,12 @@ internal sealed class MessageWindow : IDisposable
     /// 框选截图。
     public event Action? ShotHotkeyPressed;
 
+    /// 开始长截图。
+    public event Action? LongHotkeyPressed;
+
+    /// 长截图进行中按下的中断键。
+    public event Action? StopHotkeyPressed;
+
     public event Action? ClipboardUpdated;
 
     public bool RegisterLineHotkey(uint modifiers, uint virtualKey) =>
@@ -43,6 +53,19 @@ internal sealed class MessageWindow : IDisposable
 
     public bool RegisterShotHotkey(uint modifiers, uint virtualKey) =>
         Register(ShotHotkeyId, modifiers, virtualKey);
+
+    public bool RegisterLongHotkey(uint modifiers, uint virtualKey) =>
+        Register(LongHotkeyId, modifiers, virtualKey);
+
+    /// 长截图期间把"停止"挂到长截图自己的那个键上：Esc 归它独占。
+    public bool RegisterStopHotkey() =>
+        Register(StopHotkeyId, 0, Native.VK_ESCAPE);
+
+    public void UnregisterStopHotkey()
+    {
+        Native.UnregisterHotKey(Handle, StopHotkeyId);
+        _registered.Remove(StopHotkeyId);
+    }
 
     public void UnregisterHotkeys()
     {
@@ -82,6 +105,16 @@ internal sealed class MessageWindow : IDisposable
             {
                 handled = true;
                 ShotHotkeyPressed?.Invoke();
+            }
+            else if (id == LongHotkeyId)
+            {
+                handled = true;
+                LongHotkeyPressed?.Invoke();
+            }
+            else if (id == StopHotkeyId)
+            {
+                handled = true;
+                StopHotkeyPressed?.Invoke();
             }
         }
         else if (msg == Native.WM_CLIPBOARDUPDATE)
